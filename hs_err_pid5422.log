@@ -1,0 +1,75 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGBUS (0x7) at pc=0x00007fdca9052830, pid=5422, tid=0x00007fdbde81f700
+#
+# JRE version: Java(TM) SE Runtime Environment (8.0_101-b13) (build 1.8.0_101-b13)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (25.101-b13 mixed mode linux-amd64 compressed oops)
+# Problematic frame:
+# v  ~StubRoutines::jlong_disjoint_arraycopy
+#
+# Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.java.com/bugreport/crash.jsp
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007fdc3834e800):  JavaThread "indexing" daemon [_thread_in_Java, id=5821, stack(0x00007fdbde61f000,0x00007fdbde820000)]
+
+siginfo: si_signo: 7 (SIGBUS), si_code: 2 (BUS_ADRERR), si_addr: 0x00007fdbcc005000
+
+Registers:
+RAX=0x00007fdbcc005400, RBX=0x0000000000000400, RCX=0x00000000fdbe4098, RDX=0xffffffffffffff88
+RSP=0x00007fdbde81db10, RBP=0x00007fdbde81db10, RSI=0x00000000fdbe3ca0, RDI=0x00007fdbcc0053f8
+R8 =0x0000000000000000, R9 =0x00000000008c0115, R10=0x00007fdca9052ec0, R11=0x000000000048e000
+R12=0x0000000000000000, R13=0x00000000fdbe3c18, R14=0x000000000048e000, R15=0x00007fdc3834e800
+RIP=0x00007fdca9052830, EFLAGS=0x0000000000010286, CSGSFS=0x0000000000000033, ERR=0x0000000000000004
+  TRAPNO=0x000000000000000e
+
+Top of Stack: (sp=0x00007fdbde81db10)
+0x00007fdbde81db10:   00000000fdbdf140 00007fdcad61d72c
+0x00007fdbde81db20:   0000000000000042 00000000ffffffff
+0x00007fdbde81db30:   00007fdbde81db80 00007fdcabbf72c2
+0x00007fdbde81db40:   00000000fdbe3630 00000000fdbdf170
+0x00007fdbde81db50:   0000040000000000 00000000fdbe3c90
+0x00007fdbde81db60:   00000000fdbe4098 0000000000000000
+0x00007fdbde81db70:   00000000fdbe3630 0000000000000202
+0x00007fdbde81db80:   00000000fdbdf140 00007fdcaae9807c
+0x00007fdbde81db90:   0000040000000400 00000000fdbdf140
+0x00007fdbde81dba0:   00000000fdbe3c90 00000000fdbe3630
+0x00007fdbde81dbb0:   00000000fdbe3ca0 0000000000432115
+0x00007fdbde81dbc0:   00000000fdbdf140 0000000000000400
+0x00007fdbde81dbd0:   00000000fd484480 00007fdbde81dbd8
+0x00007fdbde81dbe0:   00007fdbda27c548 00007fdbde81dc28
+0x00007fdbde81dbf0:   00007fdbd9dd20a0 0000000000000000
+0x00007fdbde81dc00:   00007fdbde81dc80 00007fdca90082bd
+0x00007fdbde81dc10:   00007fdbde81dc28 00007fdca90082bd
+0x00007fdbde81dc20:   00000000008c0115 00000000fdbe3630
+0x00007fdbde81dc30:   00000000fdbdf140 00000000fdbe3630
+0x00007fdbde81dc40:   00007fdbde81dc40 00007fdbda4adc90
+0x00007fdbde81dc50:   00007fdbde81dcd0 00007fdbda22ef80
+0x00007fdbde81dc60:   0000000000000000 00007fdbda4add80
+0x00007fdbde81dc70:   00007fdbde81dc20 00007fdbde81dcb8
+0x00007fdbde81dc80:   00007fdbde81dd18 00007fdca90082bd
+0x00007fdbde81dc90:   0000000000000000 0000000000000000
+0x00007fdbde81dca0:   0000000000000000 00000000fdbe3630
+0x00007fdbde81dcb0:   00000000fdbdf140 00000000fd484480
+0x00007fdbde81dcc0:   00000000fd484480 00000000d5660e78
+0x00007fdbde81dcd0:   00000000dd171808 00007fdbde81dcd8
+0x00007fdbde81dce0:   00007fdbda4ade38 00007fdbde81dd60
+0x00007fdbde81dcf0:   00007fdbda22ef80 0000000000000000
+0x00007fdbde81dd00:   00007fdbda4adec8 00007fdbde81dcb8 
+
+Instructions: (pc=0x00007fdca9052830)
+0x00007fdca9052810:   da e9 4a 00 00 00 48 8b 44 d7 08 48 89 44 d1 08
+0x00007fdca9052820:   48 ff c2 75 f1 48 33 c0 c9 c3 66 0f 1f 44 00 00
+0x00007fdca9052830:   c5 fa 6f 44 d7 c8 c5 fa 7f 44 d1 c8 c5 fa 6f 4c
+0x00007fdca9052840:   d7 d8 c5 fa 7f 4c d1 d8 c5 fa 6f 54 d7 e8 c5 fa 
+
+Register to memory mapping:
+
+RAX=0x00007fdbcc005400 is an unknown value
+RBX=0x0000000000000400 is an unknown value
+RCX=0x00000000fdbe4098 is an oop
