@@ -2,6 +2,7 @@ package com.uit.anonymousidentity.Controllers;
 
 
 import com.uit.anonymousidentity.Models.Authenticator;
+import com.uit.anonymousidentity.Models.Verifier;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
@@ -23,13 +24,19 @@ import com.uit.anonymousidentity.Models.Issuer.IssuerPublicKey;
 import com.uit.anonymousidentity.Models.Issuer.IssuerSecretKey;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage1;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage2;
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.Set;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 @Controller
 public class MainController {
 	private BNCurve curve;
@@ -45,7 +52,10 @@ public class MainController {
                 SID = "sid",
                 JSID = "jsid",
                 SSID = "ssid",
-                   MSG = "msg",OK ="ok", ERROR = "error", NONCE ="nonce", DATA ="data";
+                   STATUS = "status",OK ="ok", ERROR = "error", NONCE ="nonce", DATA ="data", MSG="msg";
+        
+        //revocation lIst for test . This must be in database
+       private Set<BigInteger> revocationList = new HashSet<BigInteger>();
 	
 	public MainController() throws NoSuchAlgorithmException{
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
@@ -72,10 +82,10 @@ public class MainController {
                 
 
                 if(sid != null && jsid != null ){
-                    json = "{" + MSG + ":" + OK +"," + NONCE +":"+n.toString()+"}";
+                    json = "{" + STATUS + ":" + OK +"," + NONCE +":"+n.toString()+"}";
                 }
                 else {
-                    json = "{" + MSG + ":" + ERROR + "}";
+                    json = "{" + STATUS + ":" + ERROR + "}";
                 }
                 PrintWriter out = response.getWriter();
                 out.println(json);
@@ -92,10 +102,10 @@ public class MainController {
             response.setStatus(200);
             String res;
             if(jm2 == null){
-                res = "{" + MSG + ":" + "Invalid join message"+"}";
+                res = "{" + STATUS + ":" + "Invalid join message"+"}";
             }
             else{
-                res = "{" + MSG + ":" +OK + ","+ 
+                res = "{" + STATUS + ":" +OK + ","+ 
                         DATA + ":" + jm2.toJson(curve) + "}";
                         
             }
@@ -103,8 +113,46 @@ public class MainController {
             out.println(res);
         }
         @RequestMapping(value = "/verify", method = RequestMethod.POST)
-        public ModelAndView Verify(HttpServletRequest request ) throws NoSuchAlgorithmException {
-            return new ModelAndView("json","json","not implemented");
+        public void Verify(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException {
+            String appId = request.getParameter(APPID);
+            Part krd_part = request.getPart(KRD);
+            Part sig_part = request.getPart(SIG);
+            Verifier ver = new Verifier(curve);
+            byte krd[] = convertPartToByteArray(krd_part);
+            byte sig[] = convertPartToByteArray(sig_part);
+            IssuerPublicKey pk = issuer.pk;
+            Authenticator.EcDaaSignature signature = new Authenticator.EcDaaSignature(sig, krd, curve);
+            boolean valid = ver.verify(signature, appId, pk, revocationList);
+            //response
+            response.setStatus(200);
+            String res;
+            if(valid){
+                res = "{" + STATUS + ":" + OK +"," +
+                        MSG + ":" + "Signature is valid" +"}";
+            }
+            else{
+                 res = "{" + STATUS + ":" + ERROR +"," +
+                        MSG + ":" + "Signature is invalid" +"}";
+            }
+            PrintWriter out = response.getWriter();
+            out.println(res);
+            
+            
+            
+        }
+        public byte[] convertPartToByteArray(Part part) throws IOException{
+            InputStream in = part.getInputStream();
+            int size =(int)part.getSize();
+            int total = 0;
+            int readbyte = 0;
+            byte b[] = new byte[size];
+           
+            while(total < size){
+                readbyte = in.read(b,total,size);
+                total+= readbyte;
+            }
+            return b;
+            
         }
         // --- This is just for test ---//
         // Simulate a authenticate to test another functions
