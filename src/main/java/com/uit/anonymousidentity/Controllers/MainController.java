@@ -35,6 +35,7 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 @Controller
@@ -61,6 +62,14 @@ public class MainController {
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
                 random = new SecureRandom();
 		generateIssuerKeyPair();
+                //for testing 
+                Authenticator auth = new Authenticator(curve, issuer.pk);
+            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
+            String jm1_s = jm1.toJson(curve);
+            JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
+            auth.EcDaaJoin2(jm2);
+            Authenticator.EcDaaSignature sig = auth.EcDaaSign(APPID);
+                
 	}
         public  void generateIssuerKeyPair() throws NoSuchAlgorithmException{
             IssuerSecretKey sk = Issuer.createIssuerKey(curve, random);
@@ -163,6 +172,18 @@ public class MainController {
             String ret = jm1.toJson(curve);
             return new ModelAndView("json","json",ret);
         }
+        @RequestMapping(value = "/getExampleSign", method = RequestMethod.GET)
+        public void getExampleSign(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+             
+            
+            
+            
+            
+            
+            
+            
+        }
+        
         
 
 }
