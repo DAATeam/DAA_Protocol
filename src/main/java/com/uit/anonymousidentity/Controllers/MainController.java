@@ -36,8 +36,10 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+@MultipartConfig
 @Controller
 public class MainController {
 	private BNCurve curve;
@@ -121,15 +123,20 @@ public class MainController {
         }
         @RequestMapping(value = "/verify", method = RequestMethod.POST)
         public void Verify(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException {
-            String appId = request.getParameter(APPID);
+            
+            Part appId_part = request.getPart(APPID);
             Part krd_part = request.getPart(KRD);
             Part sig_part = request.getPart(SIG);
+            
             Verifier ver = new Verifier(curve);
             byte krd[] = convertPartToByteArray(krd_part);
             byte sig[] = convertPartToByteArray(sig_part);
+            byte appid_b[] = convertPartToByteArray(appId_part);
+            String appId_s = new String(appid_b);
+                    
             IssuerPublicKey pk = issuer.pk;
             Authenticator.EcDaaSignature signature = new Authenticator.EcDaaSignature(sig, krd, curve);
-            boolean valid = ver.verify(signature, appId, pk, revocationList);
+            boolean valid = ver.verify(signature, appId_s, pk, revocationList);
             //response
             response.setStatus(200);
             String res;
