@@ -57,18 +57,16 @@ public class MainController {
         
         //revocation lIst for test . This must be in database
        private Set<BigInteger> revocationList = new HashSet<BigInteger>();
+       //for testing
+       private byte[] sig_data , krd_data;
+       private String appId = "demoAppId";
 	
 	public MainController() throws NoSuchAlgorithmException{
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
                 random = new SecureRandom();
 		generateIssuerKeyPair();
                 //for testing 
-                Authenticator auth = new Authenticator(curve, issuer.pk);
-            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
-            String jm1_s = jm1.toJson(curve);
-            JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
-            auth.EcDaaJoin2(jm2);
-            Authenticator.EcDaaSignature sig = auth.EcDaaSign(APPID);
+                generateExampleSign();
                 
 	}
         public  void generateIssuerKeyPair() throws NoSuchAlgorithmException{
@@ -165,17 +163,10 @@ public class MainController {
         }
         // --- This is just for test ---//
         // Simulate a authenticate to test another functions
-        @RequestMapping(value = "/getJoinMessage1", method = RequestMethod.GET)
-        public ModelAndView getAJoinMessage1() throws NoSuchAlgorithmException{
-            Authenticator auth = new Authenticator(curve, issuer.pk);
-            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
-            String ret = jm1.toJson(curve);
-            return new ModelAndView("json","json",ret);
-        }
+        
         @RequestMapping(value = "/getExampleSign", method = RequestMethod.GET)
         public void getExampleSign(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
-             
-            
+            response.getOutputStream().write(sig_data);
             
             
             
@@ -183,7 +174,22 @@ public class MainController {
             
             
         }
-        
+        @RequestMapping(value = "/getExampleKrd", method = RequestMethod.GET)
+        public void getExampleKrd(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+            response.getOutputStream().write(krd_data);
+        }
+        public void generateExampleSign() throws NoSuchAlgorithmException{
+                Authenticator auth = new Authenticator(curve, issuer.pk);
+            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
+            String jm1_s = jm1.toJson(curve);
+            JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
+            auth.EcDaaJoin2(jm2);
+            Authenticator.EcDaaSignature sig = auth.EcDaaSign(appId);
+            krd_data = sig.krd;
+            sig_data = sig.encode(curve);
+            
+        }
+                
         
 
 }
