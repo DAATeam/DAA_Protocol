@@ -35,8 +35,11 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+@MultipartConfig
 @Controller
 public class MainController {
 	private BNCurve curve;
@@ -56,11 +59,17 @@ public class MainController {
         
         //revocation lIst for test . This must be in database
        private Set<BigInteger> revocationList = new HashSet<BigInteger>();
+       //for testing
+       private byte[] sig_data , krd_data;
+       private String appId = "demoAppId";
 	
 	public MainController() throws NoSuchAlgorithmException{
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
                 random = new SecureRandom();
 		generateIssuerKeyPair();
+                //for testing 
+                generateExampleSign();
+                
 	}
         public  void generateIssuerKeyPair() throws NoSuchAlgorithmException{
             IssuerSecretKey sk = Issuer.createIssuerKey(curve, random);
@@ -114,15 +123,20 @@ public class MainController {
         }
         @RequestMapping(value = "/verify", method = RequestMethod.POST)
         public void Verify(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException {
-            String appId = request.getParameter(APPID);
+            
+            Part appId_part = request.getPart(APPID);
             Part krd_part = request.getPart(KRD);
             Part sig_part = request.getPart(SIG);
+            
             Verifier ver = new Verifier(curve);
             byte krd[] = convertPartToByteArray(krd_part);
             byte sig[] = convertPartToByteArray(sig_part);
+            byte appid_b[] = convertPartToByteArray(appId_part);
+            String appId_s = new String(appid_b);
+                    
             IssuerPublicKey pk = issuer.pk;
             Authenticator.EcDaaSignature signature = new Authenticator.EcDaaSignature(sig, krd, curve);
-            boolean valid = ver.verify(signature, appId, pk, revocationList);
+            boolean valid = ver.verify(signature, appId_s, pk, revocationList);
             //response
             response.setStatus(200);
             String res;
@@ -156,13 +170,33 @@ public class MainController {
         }
         // --- This is just for test ---//
         // Simulate a authenticate to test another functions
-        @RequestMapping(value = "/getJoinMessage1", method = RequestMethod.GET)
-        public ModelAndView getAJoinMessage1() throws NoSuchAlgorithmException{
-            Authenticator auth = new Authenticator(curve, issuer.pk);
-            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
-            String ret = jm1.toJson(curve);
-            return new ModelAndView("json","json",ret);
+        
+        @RequestMapping(value = "/getExampleSign", method = RequestMethod.GET)
+        public void getExampleSign(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+            response.getOutputStream().write(sig_data);
+            
+            
+            
+            
+            
+            
         }
+        @RequestMapping(value = "/getExampleKrd", method = RequestMethod.GET)
+        public void getExampleKrd(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+            response.getOutputStream().write(krd_data);
+        }
+        public void generateExampleSign() throws NoSuchAlgorithmException{
+                Authenticator auth = new Authenticator(curve, issuer.pk);
+            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
+            String jm1_s = jm1.toJson(curve);
+            JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
+            auth.EcDaaJoin2(jm2);
+            Authenticator.EcDaaSignature sig = auth.EcDaaSign(appId);
+            krd_data = sig.krd;
+            sig_data = sig.encode(curve);
+            
+        }
+                
         
 
 }
