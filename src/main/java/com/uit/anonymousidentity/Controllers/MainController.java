@@ -6,6 +6,7 @@ import com.uit.anonymousidentity.Models.Verifier;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.stereotype.Controller;
 import javax.servlet.http.HttpServletRequest;
 
@@ -103,8 +104,10 @@ public class MainController {
 	}
         //recive join message 1 and produce join message 2 
         @RequestMapping(value = "/getJoinMessage2",method = RequestMethod.POST)
-        public void sendJoinMessage2(HttpServletRequest request , HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
-            String json  = request.getParameter(DATA);
+        public void sendJoinMessage2(
+                @RequestParam("data") String data ,
+                HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+            String json  = data;
             JoinMessage1 jm1 = new JoinMessage1(curve, json);
             JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
             //response
@@ -114,9 +117,8 @@ public class MainController {
                 res = "{" + STATUS + ":" + "Invalid join message"+"}";
             }
             else{
-                res = "{" + STATUS + ":" +OK + ","+ 
+                res = "{" + STATUS + ":" +OK + ","+
                         DATA + ":" + jm2.toJson(curve) + "}";
-                        
             }
             PrintWriter out = response.getWriter();
             out.println(res);
@@ -150,9 +152,6 @@ public class MainController {
             }
             PrintWriter out = response.getWriter();
             out.println(res);
-            
-            
-            
         }
         public byte[] convertPartToByteArray(Part part) throws IOException{
             InputStream in = part.getInputStream();
@@ -166,7 +165,6 @@ public class MainController {
                 total+= readbyte;
             }
             return b;
-            
         }
         // --- This is just for test ---//
         // Simulate a authenticate to test another functions
@@ -174,13 +172,8 @@ public class MainController {
         @RequestMapping(value = "/getExampleSign", method = RequestMethod.GET)
         public void getExampleSign(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
             response.getOutputStream().write(sig_data);
-            
-            
-            
-            
-            
-            
         }
+
         @RequestMapping(value = "/getExampleKrd", method = RequestMethod.GET)
         public void getExampleKrd(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
             response.getOutputStream().write(krd_data);
@@ -194,9 +187,6 @@ public class MainController {
             Authenticator.EcDaaSignature sig = auth.EcDaaSign(appId);
             krd_data = sig.krd;
             sig_data = sig.encode(curve);
-            
         }
-                
-        
 
 }
