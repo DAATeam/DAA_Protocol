@@ -26,7 +26,7 @@ public class UserInfoController {
     }
 
     @RequestMapping(value = "/registryUser", method = RequestMethod.POST)
-    public void getExampleSign(@RequestParam("id") int id,
+    public void createUser(@RequestParam("id") int id,
                                @RequestParam("name") String name,
                                HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
         response.setStatus(200);
