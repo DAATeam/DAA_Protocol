@@ -1,5 +1,6 @@
 package com.uit.anonymousidentity.Repository;
 import com.uit.anonymousidentity.Models.User;
+import com.uit.anonymousidentity.Repository.JdbcCorporateEventDao;
 /**
  * Created by DK on 10/17/16.
  */

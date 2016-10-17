@@ -6,11 +6,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import com.uit.anonymousidentity.Models.User;
 import java.io.IOException;
 import java.io.InputStream;
 import org.springframework.context.NoSuchMessageException;
-
+import com.uit.anonymousidentity.Repository.CorporateEventDao;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 
@@ -19,9 +19,21 @@ import java.security.NoSuchAlgorithmException;
  */
 @Controller
 public class UserInfoController {
-    @RequestMapping(value = "/getUserInfo", method = RequestMethod.GET)
-    public void getExampleSign(@RequestParam("id") String id, HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+    private final CorporateEventDao corporateEventDao;
+
+    public UserInfoController(CorporateEventDao corporateEventDao ) {
+        this.corporateEventDao = corporateEventDao;
+    }
+
+    @RequestMapping(value = "/registryUser", method = RequestMethod.POST)
+    public void getExampleSign(@RequestParam("id") int id,
+                               @RequestParam("name") String name,
+                               HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
         response.setStatus(200);
+        User user = new User();
+        user.setId(id);
+        user.setName(name);
+        corporateEventDao.insertUser(user);
         PrintWriter out = response.getWriter();
         out.println("yes");
     }

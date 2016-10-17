@@ -6,7 +6,9 @@ package com.uit.anonymousidentity.Models;
 public class User {
     private int id;
     private String name;
-    //getter and setter methods
+
+    public User() {
+    }
 
     public int getId() {
         return id;

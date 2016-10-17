@@ -24,6 +24,7 @@ public class JdbcCorporateEventDao implements CorporateEventDao {
 
     @Override
     public User insertUser(User user) {
+        this.jdbcTemplate.update("insert into Users (id, name) values (?, ?)", user.getId(), user.getName());
         return null;
     }
 }
