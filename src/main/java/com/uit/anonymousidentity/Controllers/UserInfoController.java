@@ -35,6 +35,6 @@ public class UserInfoController {
         user.setName(name);
         corporateEventDao.insertUser(user);
         PrintWriter out = response.getWriter();
-        out.println("yes");
+        out.println("create OK");
     }
 }
