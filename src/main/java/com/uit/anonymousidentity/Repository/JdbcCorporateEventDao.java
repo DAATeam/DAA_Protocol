@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.*;
  * Created by DK on 10/16/16.
  */
 @Repository
-public class JdbcCorporateEventDao {
+public class JdbcCorporateEventDao implements CorporateEventDao {
 
     private JdbcTemplate jdbcTemplate;
 
@@ -17,5 +17,4 @@ public class JdbcCorporateEventDao {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    // JDBC-backed implementations of the methods on the CorporateEventDao follow...
 }
