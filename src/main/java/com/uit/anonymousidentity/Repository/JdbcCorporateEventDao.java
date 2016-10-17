@@ -1,4 +1,5 @@
 package com.uit.anonymousidentity.Repository;
+import com.uit.anonymousidentity.Models.User;
 import org.springframework.stereotype.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.sql.DataSource;
@@ -13,8 +14,16 @@ public class JdbcCorporateEventDao implements CorporateEventDao {
 
     @Autowired
     public void setDataSource(DataSource dataSource) {
-        System.out.println("data connect: " + dataSource);
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
+    @Override
+    public User findByUserId(int id) {
+        return null;
+    }
+
+    @Override
+    public User insertUser(User user) {
+        return null;
+    }
 }

@@ -5,7 +5,6 @@ import com.uit.anonymousidentity.Models.Authenticator;
 import com.uit.anonymousidentity.Models.Verifier;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.stereotype.Controller;
 import javax.servlet.http.HttpServletRequest;
@@ -188,5 +187,6 @@ public class MainController {
             krd_data = sig.krd;
             sig_data = sig.encode(curve);
         }
+
 
 }
