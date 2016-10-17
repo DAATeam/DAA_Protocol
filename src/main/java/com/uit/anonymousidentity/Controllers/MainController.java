@@ -25,11 +25,14 @@ import com.uit.anonymousidentity.Models.Issuer.IssuerPublicKey;
 import com.uit.anonymousidentity.Models.Issuer.IssuerSecretKey;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage1;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage2;
+import com.uit.anonymousidentity.Repository.Nonces.Nonce;
+import com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import javax.json.Json;
@@ -40,9 +43,14 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 @MultipartConfig
 @Controller
 public class MainController {
+    @Autowired
+     ApplicationContext context;
 	private BNCurve curve;
         //for testing, use 1 issuer only 
 	private Issuer issuer;
@@ -65,13 +73,21 @@ public class MainController {
        private String appId = "demoAppId";
 	
 	public MainController() throws NoSuchAlgorithmException{
+            //this is similar to setup phase
+            //create a key pair and store them in database
+            
+              //context =new ClassPathXmlApplicationContext("ecdaa-servlet.xml");
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
                 random = new SecureRandom();
 		generateIssuerKeyPair();
+                storeKeyPair();
                 //for testing 
                 generateExampleSign();
                 
 	}
+        public void storeKeyPair(){
+            
+        }
         public  void generateIssuerKeyPair() throws NoSuchAlgorithmException{
             IssuerSecretKey sk = Issuer.createIssuerKey(curve, random);
             IssuerPublicKey pk =  new IssuerPublicKey(curve, sk, random);
@@ -179,7 +195,7 @@ public class MainController {
             response.getOutputStream().write(krd_data);
         }
         public void generateExampleSign() throws NoSuchAlgorithmException{
-                Authenticator auth = new Authenticator(curve, issuer.pk);
+                Authenticator auth = new Authenticator(curve,issuer.pk);
             JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
             String jm1_s = jm1.toJson(curve);
             JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
@@ -187,6 +203,36 @@ public class MainController {
             Authenticator.EcDaaSignature sig = auth.EcDaaSign(appId);
             krd_data = sig.krd;
             sig_data = sig.encode(curve);
+        }
+        @RequestMapping(value = "/insertExampleNonce", method = RequestMethod.GET)
+        public void insertNonce(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException{
+            //create and store
+            BigInteger n = new BigInteger(130, random);
+            Nonce nonce = new Nonce();
+            nonce.setIssuerSid("DamnIssuerSID");
+            nonce.setByteArray(n.toByteArray());
+            NonceJDBCTemplate nonceJDBCTemplate =(NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");
+            nonceJDBCTemplate.store(nonce);
+            //get back and compare
+            Set<Nonce> setNonces = nonceJDBCTemplate.getNoncesBySID("DamnIssuerSID");
+                                    
+            response.setStatus(200);
+            String res = "";
+            res+= " store : " + new String(n.toByteArray()) + "\n";
+            for(Nonce i : setNonces){
+                res += " get : " + new String(i.getByteArray());
+                if ((new BigInteger(i.getByteArray())).compareTo(n) == 0  ){
+                    res += "correct \n";
+                }
+                else{
+                    res += "\n";
+                }
+            }
+            
+            PrintWriter out = response.getWriter();
+           out.println(res);
+            
+                                    
         }
 
 }
