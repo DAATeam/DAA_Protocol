@@ -293,9 +293,7 @@ public class Issuer {
 		}
 		this.nonces = new HashSet<BigInteger>();
 		
-		//Set sid -- nguyenduyy ----
-		//this.sid = new BigInteger(130, random).toString(32);
-		this.sid = "issuer-1";
+		
 	}
 	
 	/**
@@ -445,7 +443,7 @@ public class Issuer {
 	}
 	
 	public JoinMessage2 EcDaaIssuerJoin(JoinMessage1 message) throws NoSuchAlgorithmException {
-		return this.EcDaaIssuerJoin(message, true);
+		return this.EcDaaIssuerJoin(message, false);
 	}
 	
 	public JoinMessage2 EcDaaIssuerJoin(JoinMessage1 message, boolean checkNonce) throws NoSuchAlgorithmException {

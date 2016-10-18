@@ -73,14 +73,14 @@ public class MainController {
        private byte[] sig_data , krd_data;
        private String appId = "demoAppId";
 	
-	public MainController() throws NoSuchAlgorithmException{
+	public MainController() throws NoSuchAlgorithmException, SQLException{
             
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
                 random = new SecureRandom();
 		
                 
                 //for testing 
-                //generateExampleSign();
+                
                 
 	}
         @RequestMapping(value = "/createNewIssuer" , method = RequestMethod.GET)
@@ -252,15 +252,28 @@ public class MainController {
         public void getExampleKrd(HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
             response.getOutputStream().write(krd_data);
         }
-        public void generateExampleSign() throws NoSuchAlgorithmException{
-                Authenticator auth = new Authenticator(curve,issuer.pk);
-            JoinMessage1 jm1 = auth.EcDaaJoin1(issuer.GetNonce());
+        @RequestMapping(value = "/createExampleData", method = RequestMethod.GET)
+        public void generateExampleSign(HttpServletResponse response) throws NoSuchAlgorithmException, SQLException, IOException{
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            NonceJDBCTemplate ntemplate = (NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");
+            Issuer i = template.getIssuerBySID("NDY");
+            BigInteger n =curve.getRandomModOrder(random);
+            Nonce nonce = new Nonce();
+            nonce.setIssuerSid("NDY");
+            nonce.setByteArray(n.toByteArray());
+            while(!ntemplate.isFresh(nonce)){
+                n =curve.getRandomModOrder(random);
+                nonce.setByteArray(n.toByteArray());
+            }
+             Authenticator auth = new Authenticator(i.getCurve(),i.pk);
+            JoinMessage1 jm1 = auth.EcDaaJoin1(nonce.getBigInt());
             String jm1_s = jm1.toJson(curve);
-            JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
+            JoinMessage2 jm2 = i.EcDaaIssuerJoin(jm1);
             auth.EcDaaJoin2(jm2);
             Authenticator.EcDaaSignature sig = auth.EcDaaSign(appId);
             krd_data = sig.krd;
             sig_data = sig.encode(curve);
+            response.getWriter().println("done");
         }
         @RequestMapping(value = "/insertExampleNonce", method = RequestMethod.GET)
         public void insertNonce(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException{

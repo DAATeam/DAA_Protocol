@@ -74,7 +74,10 @@ public class IssuerJDBCTemplate implements IssuerDAO{
             BNCurve curve = BNCurve.createBNCurveFromName(rs.getString(BNCurveName));
             Issuer.IssuerPublicKey ipk = new Issuer.IssuerPublicKey(curve, rs.getString(PK));
             Issuer.IssuerSecretKey isk = new Issuer.IssuerSecretKey(curve, rs.getString(SK));
-            return new Issuer(curve, isk, ipk);
+            
+            Issuer i = new Issuer(curve, isk, ipk);
+            i.setSid(sid);
+            return i;
         }
         else{
             return null;
