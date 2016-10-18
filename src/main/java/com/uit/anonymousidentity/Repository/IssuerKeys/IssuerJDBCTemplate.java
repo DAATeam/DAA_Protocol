@@ -7,10 +7,12 @@ package com.uit.anonymousidentity.Repository.IssuerKeys;
 
 import com.uit.anonymousidentity.Models.Issuer;
 import com.uit.anonymousidentity.Models.crypto.BNCurve;
-import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.ID;
+
 import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.SID;
 import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.TABLE_NAME;
 import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.VALUE;
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,10 +29,13 @@ public class IssuerJDBCTemplate implements IssuerDAO{
     private DataSource dataSource;
     private JdbcTemplate jdbcTemplate;
      public static final String SID = "sid",
-            BNCurve = "BNCurve",
+            BNCurveName = "BNCurve",
             ID = "id",
-            PK_X = "pk_x",PK_Y = "pk_y",
-            SK_X = "sk_x", SK_Y = "sk_y",            
+            PK = "pk", SK = "sk",
+           TPM_ECC_BN_P256 = "TPM_ECC_BN_P256", 
+		TPM_ECC_BN_P638= "TPM_ECC_BN_P638",
+		ECC_BN_DSD_P256= "ECC_BN_DSD_P256",
+		ECC_BN_ISOP512 = "ECC_BN_ISOP512",
             TABLE_NAME = "issuers";
              
             
@@ -44,19 +49,34 @@ public class IssuerJDBCTemplate implements IssuerDAO{
 
     @Override
     public void store(Issuer issuer) throws SQLException {
-      String t_sql = "insert into %s (%s, %s, %s, %s, %s, %s) values (?,?,?,?,?,?)";
-      String sql =  String.format(t_sql, TABLE_NAME, SID, BNCurve, PK_X, PK_Y, SK_X, SK_Y);
+      String t_sql = "insert into %s (%s, %s, %s, %s) values ( ?, ?, ?, ? )";
+      String sql =  String.format(t_sql, TABLE_NAME, SID, BNCurveName, PK, SK);
       PreparedStatement pst = dataSource.getConnection().prepareStatement(sql);
-      pst.setString(0,issuer.getSid());
-      //FIXME : find way to fit enum type in BNCurve
-      pst.setString(1, "PM_ECC_BN_P256");
-      //To be continue ...
+      pst.setString(1, issuer.getSid());
+      pst.setString(2, issuer.getCurve().getName());
+      pst.setString(3, issuer.pk.toJSON(issuer.getCurve()));
+      pst.setString(4, issuer.getSk().toJson(issuer.getCurve()));
+      pst.executeUpdate();
+      pst.close();
       
     }
-
+   
     @Override
-    public void getIssuerBySID(String sid) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Issuer getIssuerBySID(String sid) throws SQLException, NoSuchAlgorithmException {
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String sql = "select * from "+ TABLE_NAME+" where "+ SID +" = " +sid;
+        PreparedStatement pst=  dataSource.getConnection().prepareStatement(sql);
+        ResultSet rs = pst.executeQuery();
+        if(rs.next()){
+            BNCurve curve = BNCurve.createBNCurveFromName(rs.getString(BNCurveName));
+            Issuer.IssuerPublicKey ipk = new Issuer.IssuerPublicKey(curve, rs.getString(PK));
+            Issuer.IssuerSecretKey isk = new Issuer.IssuerSecretKey(curve, rs.getString(SK));
+            return new Issuer(curve, isk, ipk);
+        }
+        else{
+            return null;
+        }
+               
     }
 
     @Override
@@ -77,13 +97,11 @@ public class IssuerJDBCTemplate implements IssuerDAO{
                 + "%s int not null auto_increment,"
                 + "%s text not null,"
                     + "%s text not null,"
-                + "%s blob not null,"
-                + "%s blob not null,"
-                    + "%s blob not null,"
-                    + "%s blob not null,"
+               + "%s text not null,"
+                    + "%s text not null,"
                 + "primary key ( %s ) "
                 + " ) ";
-            String sql = String.format(tem_sql, TABLE_NAME, ID, SID, BNCurve, PK_X, PK_Y, SK_X, SK_Y,ID);
+            String sql = String.format(tem_sql, TABLE_NAME, ID, SID, BNCurveName, PK, SK,ID);
             jdbcTemplate.execute(sql);
         
         }

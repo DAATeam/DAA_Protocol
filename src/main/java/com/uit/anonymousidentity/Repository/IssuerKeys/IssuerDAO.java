@@ -7,6 +7,7 @@ package com.uit.anonymousidentity.Repository.IssuerKeys;
 
 import com.uit.anonymousidentity.Models.Issuer;
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -18,7 +19,7 @@ import javax.sql.DataSource;
 public interface IssuerDAO {
     //public void setDataSource(DataSource dataSrouce);
     public void store(Issuer issuer) throws SQLException;
-    public void getIssuerBySID(String sid) throws SQLException;
+    public Issuer getIssuerBySID(String sid) throws SQLException, NoSuchAlgorithmException;
     public void deleteIssuerBySID(String sid) throws SQLException;
     public void createTableIfNotExists() throws SQLException;
 }

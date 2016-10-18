@@ -25,6 +25,7 @@ import com.uit.anonymousidentity.Models.Issuer.IssuerPublicKey;
 import com.uit.anonymousidentity.Models.Issuer.IssuerSecretKey;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage1;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage2;
+import com.uit.anonymousidentity.Repository.IssuerKeys.IssuerJDBCTemplate;
 import com.uit.anonymousidentity.Repository.Nonces.Nonce;
 import com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate;
 import java.io.DataInputStream;
@@ -73,25 +74,30 @@ public class MainController {
        private String appId = "demoAppId";
 	
 	public MainController() throws NoSuchAlgorithmException{
-            //this is similar to setup phase
-            //create a key pair and store them in database
             
-              //context =new ClassPathXmlApplicationContext("ecdaa-servlet.xml");
 		curve = new BNCurve(BNCurveInstantiation.valueOf(TPM_ECC_BN_P256));
                 random = new SecureRandom();
-		generateIssuerKeyPair();
-                storeKeyPair();
+		
+                
                 //for testing 
-                generateExampleSign();
+                //generateExampleSign();
                 
 	}
-        public void storeKeyPair(){
+        @RequestMapping(value = "/createNewIssuer" , method = RequestMethod.GET)
+        public String storeKeyPair(@RequestParam("sid") String sid) throws NoSuchAlgorithmException, SQLException{
+            
+            Issuer i = generateIssuerKeyPair();
+            i.setSid(sid);
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            template.store(i);
+            return "ok";
             
         }
-        public  void generateIssuerKeyPair() throws NoSuchAlgorithmException{
+        public  Issuer generateIssuerKeyPair() throws NoSuchAlgorithmException{
             IssuerSecretKey sk = Issuer.createIssuerKey(curve, random);
             IssuerPublicKey pk =  new IssuerPublicKey(curve, sk, random);
-            issuer = new Issuer(curve,sk, pk);
+             Issuer i= new Issuer(curve,sk, pk);
+             return i;
             
         }
         //recieve sid from host and produce none to host to generate join messgae 1

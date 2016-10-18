@@ -42,6 +42,38 @@ public class Issuer {
 	private IssuerSecretKey sk;
 	public final IssuerPublicKey pk;
 	private Set<BigInteger> nonces;
+
+    public String getSid() {
+        return sid;
+    }
+
+    public void setSid(String sid) {
+        this.sid = sid;
+    }
+
+    public BNCurve getCurve() {
+        return curve;
+    }
+
+    public void setCurve(BNCurve curve) {
+        this.curve = curve;
+    }
+
+    public IssuerSecretKey getSk() {
+        return sk;
+    }
+
+    public void setSk(IssuerSecretKey sk) {
+        this.sk = sk;
+    }
+
+    public Set<BigInteger> getNonces() {
+        return nonces;
+    }
+
+    public void setNonces(Set<BigInteger> nonces) {
+        this.nonces = nonces;
+    }
 	
 	
 	public static class IssuerSecretKey {

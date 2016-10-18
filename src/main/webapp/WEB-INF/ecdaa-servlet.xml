@@ -34,6 +34,9 @@
         <bean id="nonceJDBCTemplate" class="com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
+        <bean id="issuerJDBCTemplate" class="com.uit.anonymousidentity.Repository.IssuerKeys.IssuerJDBCTemplate">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
 
 	<context:property-placeholder location="jdbc.properties"/>
  
