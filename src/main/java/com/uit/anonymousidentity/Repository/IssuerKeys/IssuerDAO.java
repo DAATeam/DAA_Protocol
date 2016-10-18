@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
 import java.sql.SQLException;
+import java.util.Set;
 import javax.sql.DataSource;
 
 /**
@@ -22,4 +23,6 @@ public interface IssuerDAO {
     public Issuer getIssuerBySID(String sid) throws SQLException, NoSuchAlgorithmException;
     public void deleteIssuerBySID(String sid) throws SQLException;
     public void createTableIfNotExists() throws SQLException;
+    public boolean isContainSid(String sid) throws SQLException;
+    public Set<String> getAllSid() throws SQLException;
 }

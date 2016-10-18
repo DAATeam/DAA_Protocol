@@ -5,6 +5,7 @@
  */
 package com.uit.anonymousidentity.Repository.Nonces;
 
+import java.math.BigInteger;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,10 +48,38 @@ public class NonceJDBCTemplate implements NonceDAO{
             
                 
     }
-
+    @Override
+    public boolean isFresh(Nonce n) throws SQLException{
+        String sql = "select * from " + TABLE_NAME + " where " + SID +" = ? and " + VALUE + " = ?";
+        PreparedStatement pst = dataSource.getConnection().prepareStatement(sql);
+        pst.setString(1, n.getIssuerSid());
+        pst.setBytes(2, n.getByteArray());
+         
+        ResultSet rs =  pst.executeQuery();
+        if(rs.next()){
+            return false;
+        }
+        else return true;
+        
+    }
     @Override
     public void delete(Nonce nonce)throws SQLException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    @Override
+    public Nonce find(BigInteger i) throws SQLException{
+        String sql = "select * from " + TABLE_NAME + " where " + VALUE + " = ?" ;
+        PreparedStatement pst = dataSource.getConnection().prepareStatement(sql);
+        Nonce n = new Nonce();
+        pst.setBytes(1, i.toByteArray());
+        ResultSet rs = pst.executeQuery();
+        if(rs.next()){
+            n.setIssuerSid(rs.getString(SID));
+            n.setByteArray(rs.getBytes(VALUE));
+            n.setId(rs.getInt(ID));
+            return n;
+        }
+        else return null;
     }
 
     @Override

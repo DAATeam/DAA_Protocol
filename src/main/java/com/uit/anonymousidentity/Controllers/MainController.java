@@ -84,13 +84,22 @@ public class MainController {
                 
 	}
         @RequestMapping(value = "/createNewIssuer" , method = RequestMethod.GET)
-        public String storeKeyPair(@RequestParam("sid") String sid) throws NoSuchAlgorithmException, SQLException{
-            
+        public void storeKeyPair(@RequestParam("sid") String sid, HttpServletResponse response) throws NoSuchAlgorithmException, SQLException, IOException{
+            String res = "";
+            if(sid != null && !sid.equals("")){
+            //check exists sid here
             Issuer i = generateIssuerKeyPair();
             i.setSid(sid);
             IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
             template.store(i);
-            return "ok";
+            res = "{status : ok}";
+            }
+            else{
+                res = "{status : error }";
+            }
+            PrintWriter w = response.getWriter();
+            w.println(res);
+            
             
         }
         public  Issuer generateIssuerKeyPair() throws NoSuchAlgorithmException{
@@ -100,21 +109,50 @@ public class MainController {
              return i;
             
         }
+        @RequestMapping(value = "/getPubicKey",method = RequestMethod.GET)
+        public void getPublicKey(@RequestParam("sid")String sid, HttpServletResponse response) throws SQLException, NoSuchAlgorithmException, IOException{
+            
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            Issuer i = template.getIssuerBySID(sid);
+            String res = "";
+            if(i != null){
+                res = "{status : ok , data : ";
+                res += i.pk.toJSON(curve);
+                res += "}";
+                
+            }
+            else{
+                res = "{status : ok , msg : Invalid issuer}";
+            }
+            PrintWriter w = response.getWriter();
+            w.println(res);
+            
+        }
         //recieve sid from host and produce none to host to generate join messgae 1
 	@RequestMapping(value = "/getNonce" , method = RequestMethod.POST)
-	public void SendNonce(HttpServletRequest request ,  HttpServletResponse response) throws IOException{
+	public void SendNonce(HttpServletRequest request ,  HttpServletResponse response) throws IOException, SQLException{
                 String sid = request.getParameter(SID);
                 String jsid = request.getParameter(JSID);
-                	
+                IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+                NonceJDBCTemplate ntemplate = (NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");                               
 		BigInteger n = new BigInteger(130,random);
+                Nonce nonce = new Nonce();
+                nonce.setIssuerSid(sid);
+                nonce.setByteArray(n.toByteArray());
                 //save to database
                 //response to client 
+                while(!ntemplate.isFresh(nonce)){
+                    n = new BigInteger(130, random);
+                    nonce.setByteArray(n.toByteArray());
+                    
+                }
                 response.setStatus(200);
                 String json ;
                 
 
-                if(sid != null && jsid != null ){
+                if(template.isContainSid(sid)){
                     json = "{" + STATUS + ":" + OK +"," + NONCE +":"+n.toString()+"}";
+                    ntemplate.store(nonce);
                 }
                 else {
                     json = "{" + STATUS + ":" + ERROR + "}";
@@ -128,10 +166,18 @@ public class MainController {
         @RequestMapping(value = "/getJoinMessage2",method = RequestMethod.POST)
         public void sendJoinMessage2(
                 @RequestParam("data") String data ,
-                HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
+                HttpServletResponse response) throws NoSuchAlgorithmException, IOException, SQLException{
             String json  = data;
             JoinMessage1 jm1 = new JoinMessage1(curve, json);
-            JoinMessage2 jm2 = issuer.EcDaaIssuerJoin(jm1);
+            Nonce nonce ;
+            NonceJDBCTemplate ntemplate = (NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            nonce = ntemplate.find(jm1.nonce);
+            JoinMessage2 jm2 = null;
+            Issuer i = template.getIssuerBySID(nonce.getIssuerSid());
+            if(nonce != null){
+             jm2 = i.EcDaaIssuerJoin(jm1);
+            }
             //response
             response.setStatus(200);
             String res;
@@ -146,19 +192,25 @@ public class MainController {
             out.println(res);
         }
         @RequestMapping(value = "/verify", method = RequestMethod.POST)
-        public void Verify(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException {
+        public void Verify(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException, SQLException {
             
             Part appId_part = request.getPart(APPID);
             Part krd_part = request.getPart(KRD);
             Part sig_part = request.getPart(SIG);
-            
+            Part sid_part = request.getPart(SID);
+                    
             Verifier ver = new Verifier(curve);
             byte krd[] = convertPartToByteArray(krd_part);
             byte sig[] = convertPartToByteArray(sig_part);
             byte appid_b[] = convertPartToByteArray(appId_part);
+            byte sid_b[] = convertPartToByteArray(sid_part);
             String appId_s = new String(appid_b);
+            String sid_s = new String(sid_b);
                     
-            IssuerPublicKey pk = issuer.pk;
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+           
+            Issuer i = template.getIssuerBySID(sid_s);
+            IssuerPublicKey pk = i.pk;
             Authenticator.EcDaaSignature signature = new Authenticator.EcDaaSignature(sig, krd, curve);
             boolean valid = ver.verify(signature, appId_s, pk, revocationList);
             //response

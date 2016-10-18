@@ -5,6 +5,7 @@
  */
 package com.uit.anonymousidentity.Repository.Nonces;
 
+import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.Set;
 import javax.sql.DataSource;
@@ -22,4 +23,6 @@ public interface NonceDAO {
     public Set<Nonce> getNoncesBySID(String sid) throws SQLException;
     public void delete(Nonce nonce) throws SQLException;
     public void deleteById(Integer id) throws SQLException;
+    public boolean isFresh(Nonce nonce) throws SQLException;
+    public Nonce find(BigInteger i) throws SQLException;
 }

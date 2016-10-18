@@ -11,12 +11,15 @@ import com.uit.anonymousidentity.Models.crypto.BNCurve;
 import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.SID;
 import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.TABLE_NAME;
 import static com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate.VALUE;
+
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -64,7 +67,7 @@ public class IssuerJDBCTemplate implements IssuerDAO{
     @Override
     public Issuer getIssuerBySID(String sid) throws SQLException, NoSuchAlgorithmException {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        String sql = "select * from "+ TABLE_NAME+" where "+ SID +" = " +sid;
+        String sql = "select * from "+ TABLE_NAME+" where "+ SID +" = " + "'"+ sid +"'";
         PreparedStatement pst=  dataSource.getConnection().prepareStatement(sql);
         ResultSet rs = pst.executeQuery();
         if(rs.next()){
@@ -78,7 +81,34 @@ public class IssuerJDBCTemplate implements IssuerDAO{
         }
                
     }
-
+  @Override
+  public boolean isContainSid(String sid) throws SQLException{
+      String sql= "select * from " + TABLE_NAME +
+              " where " + SID + " = " +"'"+ sid+"'";
+     PreparedStatement pst=  dataSource.getConnection().prepareStatement(sql);
+        ResultSet rs = pst.executeQuery();
+        if(rs.next()){
+            return true;
+        }
+        else return false;
+  }
+  @Override 
+    public Set<String> getAllSid() throws SQLException{
+        String sql = "select "+ SID +" from " + TABLE_NAME;
+         PreparedStatement pst=  dataSource.getConnection().prepareStatement(sql);
+        ResultSet rs = pst.executeQuery();
+        Set<String> ss = new HashSet<String>();
+        if(rs.next()){
+            do{
+                ss.add(rs.getString(SID));
+            }while(rs.next());
+            return ss;
+        }
+        else{
+            return null;
+        }
+    }
+    
     @Override
     public void deleteIssuerBySID(String sid) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
