@@ -45,7 +45,7 @@ public class BNCurve {
 	private Pairing pairing;
 	private BigInteger order;
 	public static final int STAT_INDIST_PARAM = 80;
-	
+	private String name="";
 	/**
 	 * Defines the BN curves by their u-value
 	 * @param instantiation specifies the BN curve
@@ -54,12 +54,16 @@ public class BNCurve {
 	private BigInteger curveUValue(BNCurveInstantiation instantiation) {
 		switch(instantiation) {
 		case TPM_ECC_BN_P256: 
+                    name = "TPM_ECC_BN_P256";
 			return new BigInteger("-7530851732716300289");
 		case TPM_ECC_BN_P638: 
+                    name = "TPM_ECC_BN_P638";
 			return new BigInteger("365375408992443362629982744420548242302862098433");
 		case ECC_BN_DSD_P256: 
+                    name = "ECC_BN_DSD_P256";
 			return new BigInteger("6917529027641089837");
 		case ECC_BN_ISOP512: 
+                    name = "ECC_BN_ISOP512";
 			return new BigInteger("128935115591136839671669293643286708227");
 		default:
             throw new IllegalArgumentException("Unknown BNCurveInstantiation: " + instantiation);
@@ -75,6 +79,21 @@ public class BNCurve {
 		this.pairing = AtePairingOverBarretoNaehrigCurveFactory.getPairing(PairingTypes.TYPE_3, u);
 		this.order = this.pairing.getGroup1().getOrder();
 	}
+        public static BNCurve createBNCurveFromName(String name){
+            if(name.equals("TPM_ECC_BN_P256")){
+                return new BNCurve(BNCurveInstantiation.TPM_ECC_BN_P256);
+            }
+            else if (name.equals("TPM_ECC_BN_P638")){
+                return new BNCurve(BNCurveInstantiation.TPM_ECC_BN_P638);
+            }
+            else if(name.equals("ECC_BN_DSD_P256")){
+                return new BNCurve(BNCurveInstantiation.ECC_BN_DSD_P256);
+            }
+            else if(name.equals("ECC_BN_ISOP512")){
+                return new BNCurve(BNCurveInstantiation.ECC_BN_ISOP512);
+            }
+            else throw new IllegalArgumentException("Unknowed name :" + name);
+        }
 	
 	/**
 	 * @return The order of groups G_1, G_2, G_T
@@ -368,4 +387,8 @@ public class BNCurve {
 	public ECPoint getNeutral2() {
 		return this.pairing.getGroup2().getNeutralPoint();
 	}
+        public String getName(){
+            
+            return name;
+        }
 }

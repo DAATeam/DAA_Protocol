@@ -42,6 +42,38 @@ public class Issuer {
 	private IssuerSecretKey sk;
 	public final IssuerPublicKey pk;
 	private Set<BigInteger> nonces;
+
+    public String getSid() {
+        return sid;
+    }
+
+    public void setSid(String sid) {
+        this.sid = sid;
+    }
+
+    public BNCurve getCurve() {
+        return curve;
+    }
+
+    public void setCurve(BNCurve curve) {
+        this.curve = curve;
+    }
+
+    public IssuerSecretKey getSk() {
+        return sk;
+    }
+
+    public void setSk(IssuerSecretKey sk) {
+        this.sk = sk;
+    }
+
+    public Set<BigInteger> getNonces() {
+        return nonces;
+    }
+
+    public void setNonces(Set<BigInteger> nonces) {
+        this.nonces = nonces;
+    }
 	
 	
 	public static class IssuerSecretKey {
@@ -261,9 +293,7 @@ public class Issuer {
 		}
 		this.nonces = new HashSet<BigInteger>();
 		
-		//Set sid -- nguyenduyy ----
-		//this.sid = new BigInteger(130, random).toString(32);
-		this.sid = "issuer-1";
+		
 	}
 	
 	/**
@@ -413,7 +443,7 @@ public class Issuer {
 	}
 	
 	public JoinMessage2 EcDaaIssuerJoin(JoinMessage1 message) throws NoSuchAlgorithmException {
-		return this.EcDaaIssuerJoin(message, true);
+		return this.EcDaaIssuerJoin(message, false);
 	}
 	
 	public JoinMessage2 EcDaaIssuerJoin(JoinMessage1 message, boolean checkNonce) throws NoSuchAlgorithmException {
