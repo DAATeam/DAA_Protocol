@@ -23,20 +23,16 @@
 		  class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<property name="maxUploadSize" value="100000000"/>
 	</bean>
-	
-
 	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
 		<property name="driverClassName" value="${jdbc.driverClassName}"/>
 		<property name="url" value="${jdbc.url}"/>
 		<property name="username" value="${jdbc.username}"/>
 		<property name="password" value="${jdbc.password}"/>
 	</bean>
-        <bean id="nonceJDBCTemplate" class="com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate">
+	<bean id="corporateEventDao" class="com.uit.anonymousidentity.Repository.JdbcCorporateEventDao">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
-        <bean id="issuerJDBCTemplate" class="com.uit.anonymousidentity.Repository.IssuerKeys.IssuerJDBCTemplate">
-		<property name="dataSource" ref="dataSource"/>
-	</bean>
+
 
 	<context:property-placeholder location="jdbc.properties"/>
  
