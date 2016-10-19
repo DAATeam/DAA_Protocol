@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import com.uit.anonymousidentity.Models.User;
+import com.uit.anonymousidentity.Models.user;
 import java.io.IOException;
 import java.io.InputStream;
 import org.springframework.context.NoSuchMessageException;
@@ -30,7 +30,7 @@ public class UserInfoController {
                                @RequestParam("name") String name,
                                HttpServletResponse response) throws NoSuchAlgorithmException, IOException{
         response.setStatus(200);
-        User user = new User();
+        user user = new user();
         user.setId(id);
         user.setName(name);
         corporateEventDao.insertUser(user);

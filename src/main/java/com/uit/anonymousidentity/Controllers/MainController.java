@@ -290,6 +290,7 @@ public class MainController {
                 n =curve.getRandomModOrder(random);
                 nonce.setByteArray(n.toByteArray());
             }
+            ntemplate.store(nonce);
              Authenticator auth = new Authenticator(i.getCurve(),i.pk);
             JoinMessage1 jm1 = auth.EcDaaJoin1(nonce.getBigInt());
             String jm1_s = jm1.toJson(curve);

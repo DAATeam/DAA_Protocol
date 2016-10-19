@@ -3,11 +3,11 @@ package com.uit.anonymousidentity.Models;
 /**
  * Created by DK on 10/17/16.
  */
-public class User {
+public class user {
     private int id;
     private String name;
 
-    public User() {
+    public user() {
     }
 
     public int getId() {
@@ -26,7 +26,7 @@ public class User {
         this.name = name;
     }
 
-    public User(int id, String name) {
+    public user(int id, String name) {
         this.id = id;
 
         this.name = name;
