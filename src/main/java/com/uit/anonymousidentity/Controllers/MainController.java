@@ -82,6 +82,7 @@ public class MainController {
                 
                 
 	}
+        
         @RequestMapping(value = "/createNewIssuer" , method = RequestMethod.GET)
         public void storeKeyPair(@RequestParam("sid") String sid, HttpServletResponse response) throws NoSuchAlgorithmException, SQLException, IOException{
             String res = "";
@@ -109,7 +110,32 @@ public class MainController {
              return i;
             
         }
-        @RequestMapping(value = "/getPubicKey",method = RequestMethod.GET)
+        @RequestMapping(value = "/getAllSID",method = RequestMethod.GET)
+        public void getAllSID(HttpServletResponse response) throws SQLException, IOException{
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            Set<String> ss = new HashSet<String>();
+            ss = template.getAllSid();
+            String res = "";
+            int length = ss.size();
+            int i = 0;
+            String data = "[";
+            if(ss != null){
+            for (String s : ss) {
+                data += s;
+                i++;
+                if(i<length){
+                    data += ",";
+                }
+                else data += "]";
+            }
+            res = "{" + STATUS + ":" +  OK + "," + DATA + ":" + data + "}";
+            }
+            else {
+                res = "{" + STATUS + ":" + ERROR + "," + MSG + ":" + "Not found" + "}";
+            }
+            response.getWriter().println(res);
+        }
+        @RequestMapping(value = "/getPublicKey",method = RequestMethod.GET)
         public void getPublicKey(@RequestParam("sid")String sid, HttpServletResponse response) throws SQLException, NoSuchAlgorithmException, IOException{
             
             IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
