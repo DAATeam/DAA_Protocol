@@ -61,7 +61,7 @@ public class MainController {
         public final String SIG = "sig",
                 KRD = "krd",
                 APPID = "appId",
-                JoinMessage1 = "JoinMessage1",
+                JoinMessage1 = "JM1",
                 SID = "sid",
                 JSID = "jsid",
                 SSID = "ssid",
@@ -86,16 +86,17 @@ public class MainController {
         @RequestMapping(value = "/createNewIssuer" , method = RequestMethod.GET)
         public void storeKeyPair(@RequestParam("sid") String sid, HttpServletResponse response) throws NoSuchAlgorithmException, SQLException, IOException{
             String res = "";
-            if(sid != null && !sid.equals("")){
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            if(sid != null && !sid.equals("") && !template.isContainSid(sid)){
             //check exists sid here
             Issuer i = generateIssuerKeyPair();
             i.setSid(sid);
-            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            
             template.store(i);
-            res = "{status : ok}";
+            res = "{" + STATUS + ":" + OK + "}";
             }
             else{
-                res = "{status : error }";
+                res = "{" + STATUS + ":" + ERROR + "," + MSG + ":" + "Dupliacate issuerSid" + "}";
             }
             PrintWriter w = response.getWriter();
             w.println(res);
@@ -116,13 +117,13 @@ public class MainController {
             Issuer i = template.getIssuerBySID(sid);
             String res = "";
             if(i != null){
-                res = "{status : ok , data : ";
+                res = "{" + STATUS + ":" + OK + ","+ DATA +":";
                 res += i.pk.toJSON(curve);
                 res += "}";
                 
             }
             else{
-                res = "{status : ok , msg : Invalid issuer}";
+                res = "{" + STATUS + ":" + ERROR + "," + MSG + ":" + "Invalid issuerSid" + "}";
             }
             PrintWriter w = response.getWriter();
             w.println(res);
@@ -133,8 +134,15 @@ public class MainController {
 	public void SendNonce(HttpServletRequest request ,  HttpServletResponse response) throws IOException, SQLException{
                 String sid = request.getParameter(SID);
                 String jsid = request.getParameter(JSID);
+                String json ;
                 IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
-                NonceJDBCTemplate ntemplate = (NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");                               
+                NonceJDBCTemplate ntemplate = (NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");  
+                boolean success = true;
+                response.setStatus(200);
+                success &= (sid != null && !sid.equals(""));
+                success &= (jsid != null && !jsid.equals(""));
+                success &= template.isContainSid(sid);
+                if(success){
 		BigInteger n = new BigInteger(130,random);
                 Nonce nonce = new Nonce();
                 nonce.setIssuerSid(sid);
@@ -146,17 +154,14 @@ public class MainController {
                     nonce.setByteArray(n.toByteArray());
                     
                 }
-                response.setStatus(200);
-                String json ;
+                      ntemplate.store(nonce);
+                  json = "{" + STATUS + ":" + OK +"," + NONCE +":"+n.toString()+"}";
                 
-
-                if(template.isContainSid(sid)){
-                    json = "{" + STATUS + ":" + OK +"," + NONCE +":"+n.toString()+"}";
-                    ntemplate.store(nonce);
                 }
-                else {
-                    json = "{" + STATUS + ":" + ERROR + "}";
+                else{
+                      json = "{" + STATUS + ":" + ERROR + "}";
                 }
+                
                 PrintWriter out = response.getWriter();
                 out.println(json);
                 
@@ -165,18 +170,28 @@ public class MainController {
         //recive join message 1 and produce join message 2 
         @RequestMapping(value = "/getJoinMessage2",method = RequestMethod.POST)
         public void sendJoinMessage2(
-                @RequestParam("data") String data ,
+                HttpServletRequest request,
                 HttpServletResponse response) throws NoSuchAlgorithmException, IOException, SQLException{
-            String json  = data;
+            boolean success = true;
+            String json  = request.getParameter(JoinMessage1);
+            
+            String sid = request.getParameter(SID);
             JoinMessage1 jm1 = new JoinMessage1(curve, json);
             Nonce nonce ;
             NonceJDBCTemplate ntemplate = (NonceJDBCTemplate) context.getBean("nonceJDBCTemplate");
             IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+            
             nonce = ntemplate.find(jm1.nonce);
             JoinMessage2 jm2 = null;
-            Issuer i = template.getIssuerBySID(nonce.getIssuerSid());
+            success &= (json != null);
+            success &= (jm1 != null);
+            success &= (nonce != null);
+            if(success && sid.equals(nonce.getIssuerSid())){
+            Issuer i = template.getIssuerBySID(sid);
+            
             if(nonce != null){
              jm2 = i.EcDaaIssuerJoin(jm1);
+            }
             }
             //response
             response.setStatus(200);
@@ -193,12 +208,20 @@ public class MainController {
         }
         @RequestMapping(value = "/verify", method = RequestMethod.POST)
         public void Verify(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException, SQLException {
-            
+            boolean success = true;
             Part appId_part = request.getPart(APPID);
             Part krd_part = request.getPart(KRD);
             Part sig_part = request.getPart(SIG);
             Part sid_part = request.getPart(SID);
-                    
+            String res;
+            //response
+            response.setStatus(200);
+            
+            success &= (appId_part != null);
+            success &= (krd_part != null);
+            success &= (sig_part != null);
+            success &= (sid_part != null);
+            if(success){
             Verifier ver = new Verifier(curve);
             byte krd[] = convertPartToByteArray(krd_part);
             byte sig[] = convertPartToByteArray(sig_part);
@@ -213,9 +236,7 @@ public class MainController {
             IssuerPublicKey pk = i.pk;
             Authenticator.EcDaaSignature signature = new Authenticator.EcDaaSignature(sig, krd, curve);
             boolean valid = ver.verify(signature, appId_s, pk, revocationList);
-            //response
-            response.setStatus(200);
-            String res;
+                       
             if(valid){
                 res = "{" + STATUS + ":" + OK +"," +
                         MSG + ":" + "Signature is valid" +"}";
@@ -223,6 +244,11 @@ public class MainController {
             else{
                  res = "{" + STATUS + ":" + ERROR +"," +
                         MSG + ":" + "Signature is invalid" +"}";
+            }
+            }
+            else{
+                res = "{" + STATUS + ":" + ERROR + "," +
+                        MSG + ":" + "Invalid Parameter" + "}";
             }
             PrintWriter out = response.getWriter();
             out.println(res);
