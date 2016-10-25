@@ -38,6 +38,9 @@
         <bean id="issuerJDBCTemplate" class="com.uit.anonymousidentity.Repository.IssuerKeys.IssuerJDBCTemplate">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
+        <bean id="ekJDBCTemplate" class="com.uit.anonymousidentity.Repository.EndorsementKeys.EKJDBCTemplate">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
 
 
 	<context:property-placeholder location="jdbc.properties"/>

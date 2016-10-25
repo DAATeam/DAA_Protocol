@@ -24,9 +24,13 @@ import com.uit.anonymousidentity.Models.Issuer.IssuerPublicKey;
 import com.uit.anonymousidentity.Models.Issuer.IssuerSecretKey;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage1;
 import com.uit.anonymousidentity.Models.Issuer.JoinMessage2;
+import com.uit.anonymousidentity.Repository.EndorsementKeys.EK;
+import com.uit.anonymousidentity.Repository.EndorsementKeys.EKJDBCTemplate;
 import com.uit.anonymousidentity.Repository.IssuerKeys.IssuerJDBCTemplate;
 import com.uit.anonymousidentity.Repository.Nonces.Nonce;
 import com.uit.anonymousidentity.Repository.Nonces.NonceJDBCTemplate;
+import iaik.security.ec.math.curve.ECPoint;
+import iaik.security.ec.math.curve.EllipticCurve;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +50,8 @@ import javax.servlet.http.Part;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import iaik.security.ec.math.curve.ECPoint;
 @MultipartConfig
 @Controller
 public class MainController {
@@ -82,7 +88,23 @@ public class MainController {
                 
                 
 	}
+        // A share key for each device ID wrt a TPM public key 
+        // We use this share key to encypt all transaction later.
         
+       private BigInteger getShareKey(String deviceID, String sid) throws SQLException, NoSuchAlgorithmException{
+           IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+           EKJDBCTemplate etemplate = (EKJDBCTemplate) context.getBean("ekJDBCTemplate");
+           Issuer i = template.getIssuerBySID(sid);
+           EK ek = etemplate.getEKByDeviceID(deviceID);
+           if(i!= null && ek != null){
+               ECPoint k = ek.pk.X.multiplyPoint(i.getSk().x);
+               return k.getCoordinate().getX().getField().getCardinality();
+               
+           }
+           else{
+               return null;
+           }
+       }
         @RequestMapping(value = "/createNewIssuer" , method = RequestMethod.GET)
         public void storeKeyPair(@RequestParam("sid") String sid, HttpServletResponse response) throws NoSuchAlgorithmException, SQLException, IOException{
             String res = "";
@@ -214,7 +236,7 @@ public class MainController {
             if(success && sid.equals(nonce.getIssuerSid())){
             Issuer i = template.getIssuerBySID(sid);
             
-            if(nonce != null){
+            if(nonce != null &&  i != null){
              jm2 = i.EcDaaIssuerJoin(jm1);
             }
             }
@@ -291,6 +313,71 @@ public class MainController {
             }
             return b;
         }
+        public byte[] convertHexStringToByteArray(String s){
+             int len = s.length();
+            byte[] data = new byte[len / 2];
+            for (int i = 0; i < len; i += 2) {
+                data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                             + Character.digit(s.charAt(i+1), 16));
+            }
+            return data;
+            
+        }
+        final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+        public static String bytesToHex(byte[] bytes) {
+            char[] hexChars = new char[bytes.length * 2];
+            for ( int j = 0; j < bytes.length; j++ ) {
+               int v = bytes[j] & 0xFF;
+               hexChars[j * 2] = hexArray[v >>> 4];
+               hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+          }
+             return new String(hexChars);
+        }
+        @RequestMapping(value = "/verify2", method = RequestMethod.POST)
+        public void Verify2(HttpServletRequest request, HttpServletResponse response ) throws NoSuchAlgorithmException, IOException, ServletException, SQLException {
+            boolean success = true;
+            String appId_part = request.getParameter(APPID);
+            String krd_part = request.getParameter(KRD);
+            String sig_part = request.getParameter(SIG);
+            String sid_part = request.getParameter(SID);
+            String res;
+            //response
+            response.setStatus(200);
+            
+            success &= (appId_part != null);
+            success &= (krd_part != null);
+            success &= (sig_part != null);
+            success &= (sid_part != null);
+            if(success){
+            Verifier ver = new Verifier(curve);
+            byte krd[] = convertHexStringToByteArray(krd_part);
+            byte sig[] = convertHexStringToByteArray(sig_part);
+                               
+            IssuerJDBCTemplate template = (IssuerJDBCTemplate) context.getBean("issuerJDBCTemplate");
+           
+            Issuer i = template.getIssuerBySID(sid_part);
+            IssuerPublicKey pk = i.pk;
+            Authenticator.EcDaaSignature signature = new Authenticator.EcDaaSignature(sig, krd, curve);
+            boolean valid = ver.verify(signature, appId_part, pk, revocationList);
+                       
+            if(valid){
+                res = "{" + STATUS + ":" + OK +"," +
+                        MSG + ":" + "Signature is valid" +"}";
+            }
+            else{
+                 res = "{" + STATUS + ":" + ERROR +"," +
+                        MSG + ":" + "Signature is invalid" +"}";
+            }
+            }
+            else{
+                res = "{" + STATUS + ":" + ERROR + "," +
+                        MSG + ":" + "Invalid Parameter" + "}";
+            }
+            PrintWriter out = response.getWriter();
+            out.println(res);
+        }
+        
+       
         // --- This is just for test ---//
         // Simulate a authenticate to test another functions
         
@@ -325,7 +412,11 @@ public class MainController {
             Authenticator.EcDaaSignature sig = auth.EcDaaSign(appId);
             krd_data = sig.krd;
             sig_data = sig.encode(curve);
-            response.getWriter().println("done");
+            String res = "";
+            res += "sid=NDY&appId="+appId+"&";
+            res+="sig="+bytesToHex(sig_data)+"&";
+            res+= "krd="+bytesToHex(krd_data);
+            response.getWriter().println(res);
         }
         @RequestMapping(value = "/insertExampleNonce", method = RequestMethod.GET)
         public void insertNonce(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException{
