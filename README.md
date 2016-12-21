@@ -1,5 +1,7 @@
 DAA_Protocol
 
+Project Using ECDAA lib: https://github.com/ibm-research/ecdaa
+
 ### Installing IAIK
 You have to acquire the IAIK library for yourself. 
 One can download evaluation versions from https://jce.iaik.tugraz.at/crm/freeDownload.php. 
